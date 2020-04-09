@@ -17,9 +17,9 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
         public int pairY;
         public CardinalDir pairRot;
         public BoardState state;
-        private float fallTimer;
-        private float rotTimer;
-        private float shiftTimer;
+        private float fallOffset;
+        private float rotOffsetAngle;
+        private float shiftOffset;
         private float lockTimer;
         private const float ROT_DELAY = 0.5f;
         private const float LOCK_DELAY = 0.5f;
@@ -66,10 +66,10 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
             return pairY <= field[pairX].Count || (pairY + y) <= field[pairX + x].Count;
         }
         private void Rotate(bool isLeft) {
-            rotTimer = (float)Math.PI / 2f;
+            rotOffsetAngle = (float)Math.PI / 2f;
             if (isLeft) {
                 pairRot = pairRot.RotateLeft();
-                rotTimer *= -1;
+                rotOffsetAngle *= -1;
             } else {
                 pairRot = pairRot.RotateRight();
             }
@@ -83,35 +83,35 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
                     Rotate(rotLeftJustPressed);
                 }
                 if (!TouchingStack()) {
-                    fallTimer += delta;
-                    while (fallTimer > 1) {
-                        fallTimer -= 1;
+                    fallOffset += delta;
+                    while (fallOffset > 1) {
+                        fallOffset -= 1;
                         if (!TouchingStack()) {
                             pairY -= 1;
                         }
                     }
                 }
                 if (TouchingStack()) {
-                    fallTimer = 0;
+                    fallOffset = 0;
                     lockTimer += delta;
                     if (lockTimer > LOCK_DELAY) {
                         lockTimer = 0;
-                        rotTimer = 0;
+                        rotOffsetAngle = 0;
                         state = BoardState.LOCK_ANIMATION;
                     }
                 }
-                if (rotTimer != 0) {
-                    bool rotNegative = rotTimer < 0;
-                    rotTimer += (rotNegative ? delta : -delta) * (float)Math.PI / ROT_DELAY;
-                    if (rotNegative != rotTimer < 0) {
-                        rotTimer = 0;
+                if (rotOffsetAngle != 0) {
+                    bool neg = rotOffsetAngle < 0;
+                    rotOffsetAngle += (neg ? delta : -delta) * (float)Math.PI / ROT_DELAY;
+                    if (neg != rotOffsetAngle < 0) {
+                        rotOffsetAngle = 0;
                     }
                 }
-                if (shiftTimer != 0) {
-                    bool shiftNegative = shiftTimer < 0;
-                    shiftTimer += (shiftNegative ? delta : -delta) / ROT_DELAY;
-                    if (shiftNegative != shiftTimer < 0) {
-                        shiftTimer = 0;
+                if (shiftOffset != 0) {
+                    bool neg = shiftOffset < 0;
+                    shiftOffset += (neg ? delta : -delta) / ROT_DELAY;
+                    if (neg != shiftOffset < 0) {
+                        shiftOffset = 0;
                     }
                 }
             }
@@ -165,11 +165,11 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
                     DrawPuyo(x, y, Vars.resources.PuyoSrcRect(state.puyo, state.connections));
                 }
             }
-            DrawPuyo(pairX, pairY - fallTimer, Vars.resources.PuyoSrcRect(current.main, 0));
+            DrawPuyo(pairX, pairY - fallOffset, Vars.resources.PuyoSrcRect(current.main, 0));
             (int x, int y) cardOffset = pairRot.Offset();
             Vector2 rotOffset = new Vector2(cardOffset.x, cardOffset.y);
-            rotOffset = Vector2.Transform(rotOffset, Matrix.CreateRotationZ(rotTimer));
-            DrawPuyo(pairX + rotOffset.X, pairY + rotOffset.Y - fallTimer, Vars.resources.PuyoSrcRect(current.side, 0));
+            rotOffset = Vector2.Transform(rotOffset, Matrix.CreateRotationZ(rotOffsetAngle));
+            DrawPuyo(pairX + rotOffset.X, pairY + rotOffset.Y - fallOffset, Vars.resources.PuyoSrcRect(current.side, 0));
         }
         private void Reflow() {
             for (int x = 0; x < width; x++) {
