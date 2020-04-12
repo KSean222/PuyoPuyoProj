@@ -16,6 +16,8 @@ namespace PuyoPuyoProj.Core.Interface
         public GameActionSource() {
             map = new Keys[actions.Length];
             prevState = new ActionState[actions.Length];
+            Bind(Keys.Left, GameAction.SHIFT_LEFT);
+            Bind(Keys.Right, GameAction.SHIFT_RIGHT);
             Bind(Keys.Z, GameAction.ROTATE_PUYO_LEFT);
             Bind(Keys.X, GameAction.ROTATE_PUYO_RIGHT);
         }
@@ -43,6 +45,8 @@ namespace PuyoPuyoProj.Core.Interface
     }
     public enum GameAction
     {
+        SHIFT_LEFT,
+        SHIFT_RIGHT,
         ROTATE_PUYO_LEFT,
         ROTATE_PUYO_RIGHT
     }

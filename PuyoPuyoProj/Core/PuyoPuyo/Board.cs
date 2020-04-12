@@ -21,8 +21,12 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
         private float rotOffsetAngle;
         private float shiftOffset;
         private float lockTimer;
+        private float dasTimer;
+        private bool dasIsLeft;
         private const float ROT_DELAY = 0.5f;
         private const float LOCK_DELAY = 0.5f;
+        private const float DAS = 0.5f;
+        private const float ARR = 0.1f;
         private const float LOCK_ANIM_DELAY = 0.5f;
         private readonly PuyoQueue queue;
         private List<DropAnimation> dropAnims;
@@ -62,25 +66,75 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
             pairY = height;
         }
         private bool TouchingStack() {
-            (int x, int y) = pairRot.Offset();
-            return pairY <= field[pairX].Count || (pairY + y) <= field[pairX + x].Count;
+            pairY -= 1;
+            bool touching = IsInWall();
+            pairY += 1;
+            return touching;
         }
-        private void Rotate(bool isLeft) {
-            rotOffsetAngle = (float)Math.PI / 2f;
-            if (isLeft) {
-                pairRot = pairRot.RotateLeft();
-                rotOffsetAngle *= -1;
-            } else {
-                pairRot = pairRot.RotateRight();
-            }
+        private bool IsInWall() {
+            (int offsetX, int offsetY) = pairRot.Offset();
+            return IsSolid(pairX, pairY) || IsSolid(pairX + offsetX, pairY + offsetY);
+        }
+        private bool IsSolid(int x, int y) {
+            return x < 0 || x >= width || y < field[x].Count;
         }
         public void Update(float delta, GameActionSource controller) {
+            ActionState[] controllerState = controller.FetchState();
+            ActionState leftState = controllerState[(int)GameAction.SHIFT_LEFT];
+            ActionState rightState = controllerState[(int)GameAction.SHIFT_RIGHT];
+            if (leftState.HasFlag(ActionState.PRESSED) != rightState.HasFlag(ActionState.PRESSED)) {
+                bool Shift(bool isLeft) {
+                    int initX = pairX;
+                    pairX += isLeft ? -1 : 1;
+                    if (IsInWall()) {
+                        pairX = initX;
+                        return false;
+                    }
+                    shiftOffset += isLeft ? 1 : -1;
+                    return true;
+                }
+                bool isLeft = leftState.HasFlag(ActionState.PRESSED);
+                if (isLeft != dasIsLeft) {
+                    dasIsLeft = isLeft;
+                    dasTimer = 0;
+                }
+                if (dasTimer == 0) {
+                    Shift(isLeft);
+                }
+                dasTimer += delta;
+                if (dasTimer >= DAS) {
+                    if (shiftOffset == 0) {
+                        Shift(isLeft);
+                    }
+                }
+            } else {
+                dasTimer = 0;
+            }
             void Falling() {
-                ActionState[] controllerState = controller.FetchState();
                 bool rotLeftJustPressed = controllerState[(int)GameAction.ROTATE_PUYO_LEFT].HasFlag(ActionState.JUST_PRESSED);
                 bool rotRightJustPressed = controllerState[(int)GameAction.ROTATE_PUYO_RIGHT].HasFlag(ActionState.JUST_PRESSED);
                 if (rotLeftJustPressed != rotRightJustPressed) {
-                    Rotate(rotLeftJustPressed);
+                    float initAngle = rotOffsetAngle;
+                    CardinalDir initRot = pairRot;
+                    rotOffsetAngle = (float)Math.PI / 2f;
+                    if (rotLeftJustPressed) {
+                        pairRot = pairRot.RotateLeft();
+                        rotOffsetAngle *= -1;
+                    } else {
+                        pairRot = pairRot.RotateRight();
+                    }
+                    if (IsInWall()) {
+                        (int kickX, int kickY) = pairRot.Offset();
+                        pairX -= kickX;
+                        pairY -= kickY;
+                        if (IsInWall()) {
+                            pairX += kickX;
+                            pairY += kickY;
+                            rotOffsetAngle = initAngle;
+                            pairRot = initRot;
+                            //TODO handle flipping special case
+                        }
+                    }
                 }
                 if (!TouchingStack()) {
                     fallOffset += delta;
@@ -109,7 +163,7 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
                 }
                 if (shiftOffset != 0) {
                     bool neg = shiftOffset < 0;
-                    shiftOffset += (neg ? delta : -delta) / ROT_DELAY;
+                    shiftOffset += (neg ? delta : -delta) / ARR;
                     if (neg != shiftOffset < 0) {
                         shiftOffset = 0;
                     }
@@ -165,11 +219,11 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
                     DrawPuyo(x, y, Vars.resources.PuyoSrcRect(state.puyo, state.connections));
                 }
             }
-            DrawPuyo(pairX, pairY - fallOffset, Vars.resources.PuyoSrcRect(current.main, 0));
+            DrawPuyo(pairX + shiftOffset, pairY - fallOffset, Vars.resources.PuyoSrcRect(current.main, 0));
             (int x, int y) cardOffset = pairRot.Offset();
             Vector2 rotOffset = new Vector2(cardOffset.x, cardOffset.y);
             rotOffset = Vector2.Transform(rotOffset, Matrix.CreateRotationZ(rotOffsetAngle));
-            DrawPuyo(pairX + rotOffset.X, pairY + rotOffset.Y - fallOffset, Vars.resources.PuyoSrcRect(current.side, 0));
+            DrawPuyo(pairX + shiftOffset + rotOffset.X, pairY + rotOffset.Y - fallOffset, Vars.resources.PuyoSrcRect(current.side, 0));
         }
         private void Reflow() {
             for (int x = 0; x < width; x++) {
