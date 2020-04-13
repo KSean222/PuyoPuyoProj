@@ -7,8 +7,8 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
     [Flags]
     public enum CardinalDir : byte
     {
-        SOUTH = 1,
-        NORTH = 2,
+        NORTH = 1,
+        SOUTH = 2,
         EAST = 4,
         WEST = 8
     }

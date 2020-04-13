@@ -17,7 +17,7 @@ namespace PuyoPuyoProj.Core
             puyoSkin = content.Load<Texture2D>(PUYO_SKIN_DIR + "/Default");
         }
         public void Unload(ContentManager content) {
-            puyoSkin = content.Load<Texture2D>(PUYO_SKIN_DIR + "/Default");
+            content.Unload();
         }
         public Rectangle PuyoSrcRect(Puyo puyo, CardinalDir connections) {
             int x = (int)connections;
@@ -26,7 +26,7 @@ namespace PuyoPuyoProj.Core
                 x = 6;
                 y = 12;
             }
-            return new Rectangle(x * TILE_SIZE + 1, y * TILE_SIZE + 1, TILE_SIZE - 1, TILE_SIZE - 1);
+            return new Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
     }
 }
