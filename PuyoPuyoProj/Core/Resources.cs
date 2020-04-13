@@ -23,9 +23,13 @@ namespace PuyoPuyoProj.Core
             int x = (int)connections;
             int y = (int)puyo - 1;
             if (puyo == Puyo.NUISANCE) {
-                x = 6;
-                y = 12;
+                throw new NotImplementedException();
             }
+            return new Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+        public Rectangle PuyoGhostSrcRect(Puyo puyo) {
+            int x = 16;
+            int y = (int)puyo - 1;
             return new Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
     }

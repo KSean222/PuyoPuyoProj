@@ -212,6 +212,7 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
                     Color.White
                 );
             }
+            //Draw board
             for (int x = 0; x < width; x++) {
                 List<PuyoState> column = field[x];
                 for (int y = 0; y < column.Count; y++) {
@@ -219,10 +220,15 @@ namespace PuyoPuyoProj.Core.PuyoPuyo
                     DrawPuyo(x, y, Vars.resources.PuyoSrcRect(state.puyo, state.connections));
                 }
             }
-            DrawPuyo(pairX + shiftOffset, pairY - fallOffset, Vars.resources.PuyoSrcRect(current.main, 0));
+            //Draw ghost
             (int x, int y) cardOffset = pairRot.Offset();
+            DrawPuyo(pairX, field[pairX].Count + (pairRot == CardinalDir.SOUTH ? 1 : 0), Vars.resources.PuyoGhostSrcRect(current.main));
+            DrawPuyo(pairX + cardOffset.x, field[pairX + cardOffset.x].Count + (pairRot == CardinalDir.NORTH ? 1 : 0), Vars.resources.PuyoGhostSrcRect(current.side));
+
+            //Draw pair
             Vector2 rotOffset = new Vector2(cardOffset.x, cardOffset.y);
             rotOffset = Vector2.Transform(rotOffset, Matrix.CreateRotationZ(rotOffsetAngle));
+            DrawPuyo(pairX + shiftOffset, pairY - fallOffset, Vars.resources.PuyoSrcRect(current.main, 0));
             DrawPuyo(pairX + shiftOffset + rotOffset.X, pairY + rotOffset.Y - fallOffset, Vars.resources.PuyoSrcRect(current.side, 0));
         }
         private void Reflow() {
